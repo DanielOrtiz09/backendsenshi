@@ -21,6 +21,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('login','App\Http\Controllers\UsuarioController@apilogin');
 Route::post('logintipousuario','App\Http\Controllers\UsuarioController@apilogintipousuario');
+Route::post('registrarusuario','App\Http\Controllers\UsuarioController@apiregistrarusuario');
 
 Route::post('cargarhorarioalumno','App\Http\Controllers\HorarioController@apicargarhorarioalumno');
 Route::post('cargardias','App\Http\Controllers\HorarioController@apicargardias');

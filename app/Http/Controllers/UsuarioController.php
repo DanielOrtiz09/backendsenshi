@@ -6,10 +6,168 @@ use Illuminate\Http\Request;
 use App\Models\Usuario;
 use App\Models\TipoUsuario;
 use App\Models\AsignarTipoUsuario;
+use App\Models\Dia;
+
 use Illuminate\Support\Facades\DB;
 
 class UsuarioController extends Controller
 {
+    public function apiregistrarusuario(Request $request)
+    {
+        $validar = false;
+        $mensaje = "OCURRIÓ UN ERROR INESPERADO";
+        try {
+            $identificadorAlumno = config('global.idRolAlumno');
+            $listaTipoUsuario = TipoUsuario::where('identificador','=',$identificadorAlumno)
+            ->where('estado','=',1)
+            ->first();
+            $idTipoUsuario = 0;
+            if($listaTipoUsuario == null){
+                $objTipoUsuario = new TipoUsuario;
+                $objTipoUsuario->descripcion = "ESTUDIANTE";
+                $objTipoUsuario->identificador = 1;
+                $objTipoUsuario->descripcionTipoUsuario = "Publica horarios y tareas";
+                $objTipoUsuario->estado = 1;
+                $objTipoUsuario->save();
+                $idTipoUsuario = $objTipoUsuario->id;
+            }else{
+                $idTipoUsuario = $listaTipoUsuario->id;
+            }
+
+            $listaDias = Dia::where('estado','=',1)
+            ->get();
+
+            if($listaDias->count() != 7){
+                $listaDiaDisponible = $listaDias->where('nombreDia','=','LUNES');
+                if($listaDiaDisponible->count() == 0){
+                    $objDia = new Dia;
+                    $objDia->nombreDia = "LUNES";
+                    $objDia->identificador = 1;
+                    $objDia->estado = 1;
+                    $objDia->save();
+                }
+                $listaDiaDisponible = $listaDias->where('nombreDia','=','MARTES');
+                if($listaDiaDisponible->count() == 0){
+                    $objDia = new Dia;
+                    $objDia->nombreDia = "MARTES";
+                    $objDia->identificador = 2;
+                    $objDia->estado = 1;
+                    $objDia->save();
+                }
+                $listaDiaDisponible = $listaDias->where('nombreDia','=','MIERCOLES');
+                if($listaDiaDisponible->count() == 0){
+                    $objDia = new Dia;
+                    $objDia->nombreDia = "MIERCOLES";
+                    $objDia->identificador = 3;
+                    $objDia->estado = 1;
+                    $objDia->save();
+                }
+                $listaDiaDisponible = $listaDias->where('nombreDia','=','JUEVES');
+                if($listaDiaDisponible->count() == 0){
+                    $objDia = new Dia;
+                    $objDia->nombreDia = "JUEVES";
+                    $objDia->identificador = 4;
+                    $objDia->estado = 1;
+                    $objDia->save();
+                }
+                $listaDiaDisponible = $listaDias->where('nombreDia','=','VIERNES');
+                if($listaDiaDisponible->count() == 0){
+                    $objDia = new Dia;
+                    $objDia->nombreDia = "LUNES";
+                    $objDia->identificador = 5;
+                    $objDia->estado = 1;
+                    $objDia->save();
+                }
+                $listaDiaDisponible = $listaDias->where('nombreDia','=','SÁBADO');
+                if($listaDiaDisponible->count() == 0){
+                    $objDia = new Dia;
+                    $objDia->nombreDia = "SÁBADO";
+                    $objDia->identificador = 6;
+                    $objDia->estado = 1;
+                    $objDia->save();
+                }
+                $listaDiaDisponible = $listaDias->where('nombreDia','=','DOMINGO');
+                if($listaDiaDisponible->count() == 0){
+                    $objDia = new Dia;
+                    $objDia->nombreDia = "DOMINGO";
+                    $objDia->identificador = 0;
+                    $objDia->estado = 1;
+                    $objDia->save();
+                }
+
+            }
+
+
+            if($idTipoUsuario == 0){
+                $mensaje = "Error interno de la aplicación, comunícate con el administrador";
+            }else{
+
+
+
+                $usuario = $request->usuario;
+                $clave = $request->clave;
+                $fechaNacimiento = $request->fechaNacimiento;
+                
+                    
+                if(is_null($usuario) || empty($usuario)){
+                    $mensaje = "Ingrese el usuario";
+                }else if(is_null($clave) || empty($clave)){
+                    $mensaje = "Ingrese la clave";
+                }else if(is_null($fechaNacimiento) || empty($fechaNacimiento)){
+                    $mensaje = "Ingrese la fecha de nacimiento";
+                }else {
+                    $usuario = trim($usuario);
+                    $clave = trim($clave);
+                        
+                    $listaUsuario = Usuario::where('usuario','=',$usuario)
+                    ->where('estado','=',1)
+                    ->first();
+                    if($listaUsuario != null){
+                        $mensaje = "Ya existe un usuario llamado ".$usuario;
+                    }else{
+
+
+                        $objUsuario = new Usuario;
+                        $objUsuario->primerNombre = "";
+                        $objUsuario->segundoNombre = "";
+                        $objUsuario->primerApellido = "";
+                        $objUsuario->segundoApellido = "";
+                        $objUsuario->usuario = $usuario;
+                        $objUsuario->clave = $clave;
+                        $objUsuario->fechaNacimiento = $fechaNacimiento;
+                        $objUsuario->estado = 1;
+
+                        if(!$objUsuario->save()){
+                            $mensaje = "No se guardó el usuario, intenta más tarde";
+                        }else{
+                            $idUsuario = $objUsuario->id;
+                            $objAsignarTipoUsuario = new AsignarTipoUsuario;
+                            $objAsignarTipoUsuario->idUsuario = $idUsuario;
+                            $objAsignarTipoUsuario->idTipoUsuario = $idTipoUsuario;
+                            $objAsignarTipoUsuario->estado = 1;
+                            if(!$objAsignarTipoUsuario->save()){
+                                $mensaje = "No se guardó el usuario, intenta más tarde";
+                                $objUsuario->delete();
+                            }else{
+                                $mensaje = "";
+                                $validar = true;
+                            }
+                        }       
+                    }
+                }
+            }
+
+        } catch (Exception $e) {
+            $mensaje = "OCURRIÓ UN ERROR INESPERADO";
+        }
+
+        return response()->json([
+            'mensaje'=>$mensaje,
+            'validar'=>$validar
+        ]);
+        
+    }
+
     public function apilogintipousuario(Request $request)
     {
         $validar = false;
